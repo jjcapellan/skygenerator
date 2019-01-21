@@ -1,0 +1,4 @@
+defs/
+node_modules
+*.json
+*.ts
