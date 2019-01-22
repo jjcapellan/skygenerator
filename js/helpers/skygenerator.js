@@ -2,10 +2,8 @@
  * SkyGenerator is a custom image class to create a procedural sky background using the framework Phaser 3.
  * @author       Juan Jose Capellan <soycape@hotmail.com>
  * @license      {@link https://github.com/jjcapellan/skygenerator/blob/master/LICENSE | MIT license}
- * @version      1.0.0
+ * @version      1.1.0
  */
-
-
 
 /**
  * 
@@ -25,10 +23,11 @@ class SkyGenerator extends Phaser.GameObjects.Image {
      * @param  {number} [options.generatedPointsQty = 140] Number of points generated using the initial points.
      * @param  {number} [options.margin = 0] Margin in pixels for the generation zone.
      * @param  {number} [options.cloudRadius = 100] Radius of the generated clouds.
-     * @param  {number} [options.starHaloRadius = 8] Radius of the stars halo. Must be grater than the radius of the star.
+     * @param  {number} [options.cloudGradient = 0.5] Gradient of transparency of the cloud. (0 - 1)
      * @param  {number} [options.starRadius = 3] Maximum radius of the stars.
      * @param  {number} [options.starAlpha = 0.9] Maximum opacity of the stars.
-     * @param  {number} [options.haloAlpha = 0.02] Maximum opacity of the halos.
+     * @param  {number} [options.starHardness = 2/3] Opaque proportion of the radius star. (0 - 1) 
+     * @param  {number} [options.starGradient = 0.5] Gradient of transparency of the star. (0 - 1) 
      * @param  {number[]} [options.starColors = [0xfcf9a7, 0xffffff, 0x9ef7fc]] Array of colors to apply to the stars.
      * @param  {number} [options.cloud1Color = 0x65ddf7] Color of the first layer of clouds.
      * @param  {number} [options.cloud2Color = 0x830e81] Color of the second layer of clouds.
@@ -48,21 +47,16 @@ class SkyGenerator extends Phaser.GameObjects.Image {
     this.generatedPointsQty = options.generatedPointsQty || 140;
     this.margin = options.margin || 0;
     this.cloudRadius = options.cloudRadius || 100;
-    this.starHaloRadius = options.starHaloRadius || 8;
+    this.cloudGradient = options.cloudGradient || 0.5;
     this.starRadius = options.starRadius || 3;
     this.starAlpha = options.starAlpha || 0.9;
-    this.haloAlpha = options.haloAlpha || 0.02;
+    this.starHardness = options.starHardness || 2 / 3;
+    this.starGradient = options.starGradient || 0.5;
     this.starColors = options.starColors || [ 0xfcf9a7, 0xffffff, 0x9ef7fc ];
     this.cloud1Color = options.cloud1Color || 0x65ddf7;
     this.cloud2Color = options.cloud2Color || 0x830e81;
     this.scaleStar2 = options.scaleStar2 || 0.8;
     this.scaleStar3 = options.scaleStar3 || 0.4;
-
-    if(this.starHaloRadius < this.starRadius){
-      this.starHaloRadius = this.starRadius;
-    }
-
-    
 
     this.init();
   }
@@ -100,27 +94,28 @@ class SkyGenerator extends Phaser.GameObjects.Image {
       opacity = Math.random() * this.globalOpacity + 0.05;
       this.skyLayer2.push([ point.x, point.y, opacity ]);
     }
+
+    this.skyLayer1.push([this.margin, this.margin,Math.random()]);
+    this.skyLayer2.push([this.margin, this.margin,Math.random()]);
   }
 
   initRenderTextures() {
     // Cloud rendertexture
-    let textureWidth = this.cloudRadius * 2;
+    let cloudWidth = this.cloudRadius * 2;
     this.cloudTexture = this.scene.make
-      .renderTexture({ width: textureWidth, height: textureWidth }, false)
+      .renderTexture({ width: cloudWidth, height: cloudWidth }, false)
       .setVisible(false);
 
     // Stars rendertextures
+    let starWidh = this.starRadius * 2;
     this.star1Texture = this.scene.make
-      .renderTexture(
-        { width: this.starHaloRadius * 2, height: this.starHaloRadius * 2 },
-        false
-      )
-      .setVisible(false);      
+      .renderTexture({ width: starWidh, height: starWidh }, false)
+      .setVisible(false);
     this.star2Texture = this.scene.make
       .renderTexture(
         {
-          width: this.starHaloRadius * 2 * this.scaleStar2,
-          height: this.starHaloRadius * 2 * this.scaleStar2
+          width: starWidh * this.scaleStar2,
+          height: starWidh * this.scaleStar2
         },
         false
       )
@@ -128,63 +123,80 @@ class SkyGenerator extends Phaser.GameObjects.Image {
     this.star3Texture = this.scene.make
       .renderTexture(
         {
-          width: this.starHaloRadius * 2.2 * this.scaleStar3,
-          height: this.starHaloRadius * 2.2 * this.scaleStar3
+          width: starWidh * this.scaleStar3,
+          height: starWidh * this.scaleStar3
         },
         false
       )
       .setVisible(false);
   }
 
-  // Makes a "cloud" based on overlayed semitransparent circles to get a gradient of transparency
-  // and draws it on texture.
+  // Draw a cloud in its texture
   initCloudBrush() {
-    let brush = this.scene.add.graphics();
-    let textureWidth = this.cloudRadius * 2;
-    let cloudAlpha = this.globalOpacity / this.cloudRadius;
-    if (cloudAlpha < 0.005) cloudAlpha = 0.005;
-    brush.setVisible(false);
-    for (let i = 2; i < this.cloudRadius + 1; i++) {
-      brush.fillStyle(0xffffff, cloudAlpha);
-      brush.fillCircle(0, 0, i);
-    }
-
-    this.cloudTexture.draw(brush, textureWidth / 2, textureWidth / 2);
+    this.cloudTexture.draw(
+      this.makeBrush(1, this.cloudRadius, this.cloudGradient, false),
+      this.cloudTexture.width / 2,
+      this.cloudTexture.width / 2
+    );
   }
 
-  // Makes three "stars" based on overlayed semitransparent circles to get a gradient of transparency.
-  // and saves it on textures.
-  // The option of scale one star gets a lot of square stars. (phaser v3.15)
+  // Draw three stars with different scales in its textures
   initStarBrush() {
+    // Star scale 1
+    this.star1Texture.draw(
+      this.makeBrush(1, this.starRadius, this.starGradient, true),
+      this.star1Texture.width / 2,
+      this.star1Texture.width / 2
+    );
+
+    // Star scale scaleStar2
+    this.star2Texture.draw(
+      this.makeBrush(this.scaleStar2, this.starRadius, this.starGradient, true),
+      this.star2Texture.width / 2,
+      this.star2Texture.width / 2
+    );
+
+    // Star scale scaleStar3
+    this.star3Texture.draw(
+      this.makeBrush(this.scaleStar3, this.starRadius, this.starGradient, true),
+      this.star3Texture.width / 2,
+      this.star3Texture.width / 2
+    );
+  }
+
+  // Makes a "brush" based on overlayed semitransparent circles to get a gradient of transparency and returns a Phaser.GameObjects.Graphics
+  // f(x) = minRadius + k*x*x ------> x = step in for loop; f(x) = radius (quadratic easing in)
+  makeBrush(scale, initialRadius, gradient, isStar) {
     let brush = this.scene.add.graphics();
+    let radius = Math.round(initialRadius * scale);
+    let steps = Math.round(200 * gradient);
+    let k = (radius - 1) / (steps * steps);
+    let alpha = this.starAlpha / steps;
+    let prevRadius = 0;
+
+    if (alpha < 0.005) alpha = 0.005;
     brush.setVisible(false);
 
-    // Star scale 1
-    brush.fillStyle(0xffffff, this.haloAlpha);
-    brush.fillCircle(0, 0, this.starHaloRadius);
-    brush.fillStyle(0xffffff, this.starAlpha);
-    brush.fillCircle(0, 0, this.starRadius);
+    for (let i = 0; i < radius + 1; i++) {
+      brush.fillStyle(0xffffff, alpha);
+      let r = Math.round(1 + i * i * k);
+      if (r < 1) r = 1;
+      if (r > radius) r = radius;
+      // prevents draw two times same circle
+      if (r == prevRadius) {
+        continue;
+      } else {
+        prevRadius = r;
+      }
+      brush.fillCircle(0, 0, r);
+    }
 
-    this.star1Texture.draw(brush, this.starHaloRadius, this.starHaloRadius);
-
-    //Star scale scaleStar2
-    let star2Radius = Math.round(this.starRadius*this.scaleStar2);
-    brush.clear();
-    brush.fillStyle(0xffffff, this.haloAlpha);
-    brush.fillCircle(0, 0, this.starHaloRadius * this.scaleStar2);
-    brush.fillStyle(0xffffff, this.starAlpha);
-    brush.fillCircle(0, 0, star2Radius);
-
-    this.star2Texture.draw(brush, this.star2Texture.width/2, this.star2Texture.width/2);
-
-    //Star scale scaleStar3
-    brush.clear();
-    brush.fillStyle(0xffffff, this.haloAlpha);
-    brush.fillCircle(0, 0, this.starHaloRadius * this.scaleStar3);
-    brush.fillStyle(0xffffff, this.starAlpha);
-    brush.fillCircle(0, 0, this.starRadius * this.scaleStar3);
-
-    this.star3Texture.draw(brush, this.star3Texture.width/2, this.star3Texture.width/2);
+    if (isStar) {
+      if (this.starHardness == 0) this.starHardness = 0.001;
+      brush.fillStyle(0xffffff, this.starAlpha);
+      brush.fillCircle(0, 0, radius * this.starHardness);
+    }
+    return brush;
   }
 
   // Parses skyLayer1 and skyLayer2 arrays and using that data draws the textures of clouds and stars in a new texture.
@@ -208,7 +220,7 @@ class SkyGenerator extends Phaser.GameObjects.Image {
 
       rt.draw(this.cloudTexture);
 
-      // Second layer 
+      // Second layer
       this.cloudTexture
         .setPosition(this.skyLayer2[i][0], this.skyLayer2[i][1])
         .setTint(this.cloud2Color)
@@ -224,7 +236,7 @@ class SkyGenerator extends Phaser.GameObjects.Image {
 
       starTexture
         .setPosition(this.skyLayer2[i][0], this.skyLayer2[i][1])
-        .setAlpha(this.skyLayer2[i][2]*(this.starAlpha/this.globalOpacity))
+        .setAlpha(this.skyLayer2[i][2] * (this.starAlpha / this.globalOpacity))
         .setTint(Phaser.Math.RND.pick(this.starColors));
 
       rt.draw([ this.cloudTexture, starTexture ]);
