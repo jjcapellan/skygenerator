@@ -9,13 +9,13 @@ Demo [here](https://jjcapellan.github.io/skygenerator/).
   
 ## Installation
 There are two alternatives:
-* Download the file [skygenerator.min.js](https://cdn.jsdelivr.net/gh/jjcapellan/skygenerator@1.1.0/dist/skygenerator.min.js) or [skygenerator.js](https://cdn.jsdelivr.net/gh/jjcapellan/skygenerator@1.1.0/dist/skygenerator.js) to your proyect folder and add a reference in your html:
+* Download the file [skygenerator.min.js](https://cdn.jsdelivr.net/gh/jjcapellan/skygenerator@1.1.1/dist/skygenerator.min.js) or [skygenerator.js](https://cdn.jsdelivr.net/gh/jjcapellan/skygenerator@1.1.1/dist/skygenerator.js) to your proyect folder and add a reference in your html:
 ```html
 <script src = "skygenerator.min.js"></script>
 ```
 * Point a script tag to the CDN link:
 ```html
-<script src = "https://cdn.jsdelivr.net/gh/jjcapellan/skygenerator@1.1.0/dist/skygenerator.min.js"></script>
+<script src = "https://cdn.jsdelivr.net/gh/jjcapellan/skygenerator@1.1.1/dist/skygenerator.min.js"></script>
 ```   
 
 ## How to use
