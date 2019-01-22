@@ -1,19 +1,21 @@
 # SkyGenerator
 Custom image class to use with the game framework [Phaser 3](https://phaser.io/).  
 This class generates customizable star backgrounds.  
+You can see the source in **dist** folder. 
 Demo [here](https://jjcapellan.github.io/skygenerator/).  
-![sample1](img1.png "Menu")  
-![sample2](img2.png "Menu") 
+![sample1](img1.png "sample1")  
+![sample2](img2.png "sample2") 
+![sample3](img3.png "sample3") 
   
 ## Installation
 There are two alternatives:
-* Download the file [skygenerator.min.js](https://cdn.jsdelivr.net/gh/jjcapellan/skygenerator@1.0.0/dist/skygenerator.min.js) to your proyect folder and add a reference in your html:
+* Download the file [skygenerator.min.js](https://cdn.jsdelivr.net/gh/jjcapellan/skygenerator@1.1.0/dist/skygenerator.min.js) or [skygenerator.js](https://cdn.jsdelivr.net/gh/jjcapellan/skygenerator@1.1.0/dist/skygenerator.js) to your proyect folder and add a reference in your html:
 ```html
 <script src = "skygenerator.min.js"></script>
 ```
 * Point a script tag to the CDN link:
 ```html
-<script src = "https://cdn.jsdelivr.net/gh/jjcapellan/skygenerator@1.0.0/dist/skygenerator.min.js"></script>
+<script src = "https://cdn.jsdelivr.net/gh/jjcapellan/skygenerator@1.1.0/dist/skygenerator.min.js"></script>
 ```   
 
 ## How to use
@@ -37,10 +39,11 @@ The config object has this optional properties:
 * [generatedPointsQty = 140] Number of points generated using the initial points.
 * [margin = 0] Margin in pixels for the generation zone.
 * [cloudRadius = 100] Radius of the generated clouds.
-* [starHaloRadius = 8] Radius of the stars halo. Must be grater than the radius of the star.
+* [cloudGradient = 0.5] Gradient of transparency of the cloud. (0 - 1)
 * [starRadius = 3] Maximum radius of the stars.
+* [starHardness = 2/3] Opaque proportion of the radius star. (0 - 1)
+* [starGradient = 0.5] Gradient of transparency of the star. (0 - 1) 
 * [starAlpha = 0.9] Maximum opacity of the stars.
-* [haloAlpha = 0.02] Maximum opacity of the halos.
 * [starColors = [0xfcf9a7, 0xffffff, 0x9ef7fc]] Array of colors to apply to the stars.
 * [cloud1Color = 0x65ddf7] Color of the first layer of clouds.
 * [cloud2Color = 0x830e81] Color of the second layer of clouds.
