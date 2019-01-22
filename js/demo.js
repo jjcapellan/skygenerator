@@ -5,10 +5,11 @@ var skyConfig = {
   generatedPointsQty: 140,
   margin: 0,
   cloudRadius: 100,
-  starHaloRadius: 8,
+  cloudGradient: 0.5,
   starRadius: 3,
+  starHardness: 0.7,
+  starGradient: 0.5,
   starAlpha: 0.9,
-  haloAlpha: 0.02,
   cloud1Color: 0x65ddf7,
   cloud2Color: 0x830e81,
   scaleStar2: 0.8,
@@ -31,7 +32,6 @@ class GenerateSky extends Phaser.Scene {
   }
 
   refresh() {
-    console.log('refresh');
     this.scene.restart();
   }
 }
@@ -43,10 +43,11 @@ gui.add(skyConfig, 'initialPointsQty', 4, 200, 10);
 gui.add(skyConfig, 'generatedPointsQty', 10, 1000, 10);
 gui.add(skyConfig, 'margin', 0, 50, 5);
 gui.add(skyConfig, 'cloudRadius', 10, 1000, 10);
-gui.add(skyConfig, 'starHaloRadius', 2, 800, 2);
+gui.add(skyConfig, 'cloudGradient', 0, 1, 0.01);
 gui.add(skyConfig, 'starRadius', 2, 500, 1);
+gui.add(skyConfig, 'starHardness', 0, 1, 0.01);
+gui.add(skyConfig, 'starGradient', 0, 1, 0.01);
 gui.add(skyConfig, 'starAlpha', 0, 1, 0.01);
-gui.add(skyConfig, 'haloAlpha', 0, 1, 0.01);
 gui.addColor(skyConfig, 'cloud1Color');
 gui.addColor(skyConfig, 'cloud2Color');
 gui.add(skyConfig, 'scaleStar2', 0, 1, 0.1);
