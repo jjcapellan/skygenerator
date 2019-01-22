@@ -2,7 +2,7 @@
  * SkyGenerator is a custom image class to create a procedural sky background using the framework Phaser 3.
  * @author       Juan Jose Capellan <soycape@hotmail.com>
  * @license      {@link https://github.com/jjcapellan/skygenerator/blob/master/LICENSE | MIT license}
- * @version      1.1.0
+ * @version      1.1.1
  */
 
 /**
@@ -134,7 +134,7 @@ class SkyGenerator extends Phaser.GameObjects.Image {
   // Draw a cloud in its texture
   initCloudBrush() {
     this.cloudTexture.draw(
-      this.makeBrush(1, this.cloudRadius, this.cloudGradient, false),
+      this.makeBrush(this.cloudRadius, this.cloudGradient, false),
       this.cloudTexture.width / 2,
       this.cloudTexture.width / 2
     );
@@ -144,31 +144,37 @@ class SkyGenerator extends Phaser.GameObjects.Image {
   initStarBrush() {
     // Star scale 1
     this.star1Texture.draw(
-      this.makeBrush(1, this.starRadius, this.starGradient, true),
+      this.makeBrush(this.starRadius, this.starGradient, true),
       this.star1Texture.width / 2,
       this.star1Texture.width / 2
     );
 
     // Star scale scaleStar2
     this.star2Texture.draw(
-      this.makeBrush(this.scaleStar2, this.starRadius, this.starGradient, true),
+      this.makeBrush(Math.round(this.scaleStar2*this.starRadius), this.starGradient, true),
       this.star2Texture.width / 2,
       this.star2Texture.width / 2
     );
 
     // Star scale scaleStar3
     this.star3Texture.draw(
-      this.makeBrush(this.scaleStar3, this.starRadius, this.starGradient, true),
+      this.makeBrush(Math.round(this.scaleStar3*this.starRadius), this.starGradient, true),
       this.star3Texture.width / 2,
       this.star3Texture.width / 2
     );
   }
 
-  // Makes a "brush" based on overlayed semitransparent circles to get a gradient of transparency and returns a Phaser.GameObjects.Graphics
-  // f(x) = minRadius + k*x*x ------> x = step in for loop; f(x) = radius (quadratic easing in)
-  makeBrush(scale, initialRadius, gradient, isStar) {
+  /**
+   * Makes a "brush" based on overlayed semitransparent circles to get a gradient of transparency
+   * f(x) = minRadius + k*x*x ------> x = step in for loop; f(x) = radius (quadratic easing in)
+   * @param  {number} radius 
+   * @param  {number} gradient Number between 0 and 1. 1 = Max softness.
+   * @param  {boolean} isStar
+   * @return {Phaser.GameObjects.Graphics}
+   * @memberof SkyGenerator
+   */
+  makeBrush(radius, gradient, isStar) {
     let brush = this.scene.add.graphics();
-    let radius = Math.round(initialRadius * scale);
     let steps = Math.round(200 * gradient);
     let k = (radius - 1) / (steps * steps);
     let alpha = this.starAlpha / steps;
