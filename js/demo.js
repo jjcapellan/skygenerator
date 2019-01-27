@@ -1,19 +1,24 @@
 var skyConfig = {
   backgroundColor: 0x000023,
-  globalOpacity: 0.5,
-  initialPointsQty: 50,
-  generatedPointsQty: 140,
-  margin: 0,
-  cloudRadius: 100,
-  cloudGradient: 0.5,
-  starRadius: 3,
-  starHardness: 0.7,
-  starGradient: 0.5,
+  gridUnitSize: 82,
+  maxStarsCluster: 46,
+  minStarsCluster: 19,
+  starHightPassFilter:0.3,
+  cloudRadius: 200,
+  cloudGradient: 1,
+  cloud1Opacity: 0.525,
+  cloud2Opacity: 0.865,
+  starRadius: 48,
+  starsDispersion: 1,
+  cloudStarScale: 0.2,
+  cloudStarAlpha:0.5,
+  starHardness: 0.03,
+  starGradient: 0.54,
   starAlpha: 0.9,
   cloud1Color: 0x65ddf7,
   cloud2Color: 0x830e81,
-  scaleStar2: 0.8,
-  scaleStar3: 0.4
+  scaleStar2: 0.6,
+  scaleStar3: 0.3
 };
 
 class GenerateSky extends Phaser.Scene {
@@ -38,20 +43,29 @@ class GenerateSky extends Phaser.Scene {
 
 var gui = new dat.GUI({ with: 400 });
 gui.addColor(skyConfig, 'backgroundColor');
-gui.add(skyConfig, 'globalOpacity', 0, 1, 0.05);
-gui.add(skyConfig, 'initialPointsQty', 4, 200, 10);
-gui.add(skyConfig, 'generatedPointsQty', 10, 1000, 10);
-gui.add(skyConfig, 'margin', 0, 50, 5);
-gui.add(skyConfig, 'cloudRadius', 10, 1000, 10);
-gui.add(skyConfig, 'cloudGradient', 0, 1, 0.01);
-gui.add(skyConfig, 'starRadius', 2, 500, 1);
-gui.add(skyConfig, 'starHardness', 0, 1, 0.01);
-gui.add(skyConfig, 'starGradient', 0, 1, 0.01);
-gui.add(skyConfig, 'starAlpha', 0, 1, 0.01);
-gui.addColor(skyConfig, 'cloud1Color');
-gui.addColor(skyConfig, 'cloud2Color');
-gui.add(skyConfig, 'scaleStar2', 0, 1, 0.1);
-gui.add(skyConfig, 'scaleStar3', 0, 1, 0.1);
+gui.add(skyConfig, 'gridUnitSize', 10, 200, 2);
+var f1 = gui.addFolder('Clouds layers');
+f1.add(skyConfig, 'cloud1Opacity',0,1,0.005);
+f1.add(skyConfig, 'cloud2Opacity',0,1,0.005);
+f1.add(skyConfig, 'cloudRadius', 10, 1000, 10);
+f1.add(skyConfig, 'cloudGradient', 0, 1, 0.01);
+f1.add(skyConfig, 'cloudStarAlpha',0,1,0.005);
+f1.add(skyConfig, 'cloudStarScale',0.01,1,0.005);
+f1.addColor(skyConfig, 'cloud1Color');
+f1.addColor(skyConfig, 'cloud2Color');
+f1.open();
+var f2 = gui.addFolder('Stars layer');
+f2.add(skyConfig, 'maxStarsCluster',0,400,1);
+f2.add(skyConfig, 'minStarsCluster',0,400,1);
+f2.add(skyConfig,'starHightPassFilter',0.1,0.95,0.05);
+f2.add(skyConfig, 'starRadius', 2, 500, 1);
+f2.add(skyConfig, 'starsDispersion',1,50,0.01);
+f2.add(skyConfig, 'starHardness', 0, 1, 0.01);
+f2.add(skyConfig, 'starGradient', 0, 1, 0.01);
+f2.add(skyConfig, 'starAlpha', 0, 1, 0.01);
+f2.add(skyConfig, 'scaleStar2', 0, 1, 0.1);
+f2.add(skyConfig, 'scaleStar3', 0, 1, 0.1);
+f2.open();
 
 var gameConfig = {
   type: Phaser.AUTO,

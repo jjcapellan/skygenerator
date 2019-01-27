@@ -2,7 +2,7 @@
  * SkyGenerator is a custom image class to create a procedural sky background using the framework Phaser 3.
  * @author       Juan Jose Capellan <soycape@hotmail.com>
  * @license      {@link https://github.com/jjcapellan/skygenerator/blob/master/LICENSE | MIT license}
- * @version      1.1.1
+ * @version      2.0.0
  */
 
 /**
@@ -18,16 +18,21 @@ class SkyGenerator extends Phaser.GameObjects.Image {
      * @param  {number} height 
      * @param  {object} [options] 
      * @param  {number} [options.backgroundColor = 0x000023]
-     * @param  {number} [options.globalOpacity = 0.5] Number between 0 and 1.
-     * @param  {number} [options.initialPointsQty = 50] Initial number of points.
-     * @param  {number} [options.generatedPointsQty = 140] Number of points generated using the initial points.
-     * @param  {number} [options.margin = 0] Margin in pixels for the generation zone.
-     * @param  {number} [options.cloudRadius = 100] Radius of the generated clouds.
-     * @param  {number} [options.cloudGradient = 0.5] Gradient of transparency of the cloud. (0 - 1)
-     * @param  {number} [options.starRadius = 3] Maximum radius of the stars.
+     * @param  {number} [options.cloud1Opacity = 0.525] Opacity of first clouds layer [0.0 - 1.0]
+     * @param  {number} [options.cloud2Opacity = 0.865] Opacity of second clouds layer [0.0 - 1.0]
+     * @param  {number} [options.cloudStarAlpha = 0.5] Opacity of the star clouds [0.0 - 1.0]
+     * @param  {number} [options.cloudStarScale = 0.2] Scale of the star cloud [0.0 - 1.0]
+     * @param  {number} [options.gridUnitSize = 82] Size of the cells of the grid
+     * @param  {number} [options.maxStarsCluster = 46] Max stars in a cluster
+     * @param  {number} [options.minStarsCluster = 19] Min stars in cluster
+     * @param  {number} [options.starHightPassFilter = 0.3] Minimum value of the hightmap to generate a star cluster [0.1 - 0.9]
+     * @param  {number} [options.cloudRadius = 200] Radius of the generated clouds
+     * @param  {number} [options.cloudGradient = 1] Gradient of transparency of the cloud. (0 - 1)
+     * @param  {number} [options.starRadius = 48] Maximum radius of the stars.
      * @param  {number} [options.starAlpha = 0.9] Maximum opacity of the stars.
-     * @param  {number} [options.starHardness = 2/3] Opaque proportion of the radius star. (0 - 1) 
-     * @param  {number} [options.starGradient = 0.5] Gradient of transparency of the star. (0 - 1) 
+     * @param  {number} [options.starHardness = 0.03] Opaque proportion of the radius star. (0 - 1) 
+     * @param  {number} [options.starGradient = 0.54] Gradient of transparency of the star. (0 - 1)
+     * @param  {number} [options.starsDispersion = 1] Dispersion of the stars (1 = no dispersion) 
      * @param  {number[]} [options.starColors = [0xfcf9a7, 0xffffff, 0x9ef7fc]] Array of colors to apply to the stars.
      * @param  {number} [options.cloud1Color = 0x65ddf7] Color of the first layer of clouds.
      * @param  {number} [options.cloud2Color = 0x830e81] Color of the second layer of clouds.
@@ -42,61 +47,66 @@ class SkyGenerator extends Phaser.GameObjects.Image {
     this.width = width;
     this.height = height;
     this.backgroundColor = options.backgroundColor || 0x000023;
-    this.globalOpacity = options.globalOpacity || 0.5;
-    this.initialPointsQty = options.initialPointsQty || 50;
-    this.generatedPointsQty = options.generatedPointsQty || 140;
-    this.margin = options.margin || 0;
-    this.cloudRadius = options.cloudRadius || 100;
-    this.cloudGradient = options.cloudGradient || 0.5;
-    this.starRadius = options.starRadius || 3;
+    this.cloud1Opacity = options.cloud1Opacity || 0.525;
+    this.cloud2Opacity = options.cloud2Opacity || 0.865;
+    this.cloudStarOpacity = options.cloudStarAlpha || 0.5;
+    this.gridUnitSize = options.gridUnitSize || 82;
+    this.maxStarsCluster = options.maxStarsCluster || 46;
+    this.minStarsCluster = options.minStarsCluster || 19;
+    this.starHightPassFilter = options.starHightPassFilter || 0.3;
+    this.cloudRadius = options.cloudRadius || 200;
+    this.cloudGradient = options.cloudGradient || 1;
+    this.starRadius = options.starRadius || 48;
     this.starAlpha = options.starAlpha || 0.9;
-    this.starHardness = options.starHardness || 2 / 3;
-    this.starGradient = options.starGradient || 0.5;
+    this.starsDispersion = options.starsDispersion || 1;
+    this.cloudStarScale = options.cloudStarScale || 0.2;
+    this.starHardness = options.starHardness || 0.03;
+    this.starGradient = options.starGradient || 0.54;
     this.starColors = options.starColors || [ 0xfcf9a7, 0xffffff, 0x9ef7fc ];
     this.cloud1Color = options.cloud1Color || 0x65ddf7;
     this.cloud2Color = options.cloud2Color || 0x830e81;
-    this.scaleStar2 = options.scaleStar2 || 0.8;
-    this.scaleStar3 = options.scaleStar3 || 0.4;
+    this.scaleStar2 = options.scaleStar2 || 0.6;
+    this.scaleStar3 = options.scaleStar3 || 0.3;
 
     this.init();
   }
 
   init() {
     // Arrays where points are stored
-    this.skyLayer1 = [];
-    this.skyLayer2 = [];
+    this.cloudsLayer1 = new Map();
+    this.cloudsLayer2 = new Map();
+    this.starsLayer = [];
 
-    this.initMap();
     this.initRenderTextures();
     this.initCloudBrush();
     this.initStarBrush();
-    this.generatePoints();
+    this.makeGrid(this.gridUnitSize, Math.random() * 50000, this.cloudsLayer1);
+    this.makeGrid(this.gridUnitSize, Math.random() * 50000, this.cloudsLayer2);
     this.scene.cameras.main.setBackgroundColor(this.backgroundColor);
     this.generateTexture();
     this.setTexture('rt_SkyGenerator');
     this.setOrigin(0);
   }
 
-  // Generates firsts points.
-  initMap() {
-    let rectangle = new Phaser.Geom.Rectangle(
-      this.margin,
-      this.margin,
-      this.width - this.margin,
-      this.height - this.margin
-    );
-    for (let i = 0, j = this.initialPointsQty; i < j; i++) {
-      let point = rectangle.getRandomPoint();
-      let opacity = Math.random() * this.globalOpacity + 0.05;
-      this.skyLayer1.push([ point.x, point.y, opacity ]);
+  makeGrid(unitSize, seed, gridMap) {
+    let noise = new SimplexNoise(seed);
+    let next = true;
+    let alpha;
+    let x = 0;
+    let y = 0;
 
-      point = rectangle.getRandomPoint();
-      opacity = Math.random() * this.globalOpacity + 0.05;
-      this.skyLayer2.push([ point.x, point.y, opacity ]);
+    while (next) {
+      alpha = noise.noise2D(x, y);
+      gridMap.set({ x: x, y: y }, alpha);
+      x += unitSize;
+      if (x > this.width) {
+        x = 0;
+        y += unitSize;
+      }
+      if (y > this.height) {
+        next = false;
+      }
     }
-
-    this.skyLayer1.push([this.margin, this.margin,Math.random()]);
-    this.skyLayer2.push([this.margin, this.margin,Math.random()]);
   }
 
   initRenderTextures() {
@@ -151,14 +161,22 @@ class SkyGenerator extends Phaser.GameObjects.Image {
 
     // Star scale scaleStar2
     this.star2Texture.draw(
-      this.makeBrush(Math.round(this.scaleStar2*this.starRadius), this.starGradient, true),
+      this.makeBrush(
+        Math.round(this.scaleStar2 * this.starRadius),
+        this.starGradient,
+        true
+      ),
       this.star2Texture.width / 2,
       this.star2Texture.width / 2
     );
 
     // Star scale scaleStar3
     this.star3Texture.draw(
-      this.makeBrush(Math.round(this.scaleStar3*this.starRadius), this.starGradient, true),
+      this.makeBrush(
+        Math.round(this.scaleStar3 * this.starRadius),
+        this.starGradient,
+        true
+      ),
       this.star3Texture.width / 2,
       this.star3Texture.width / 2
     );
@@ -207,79 +225,85 @@ class SkyGenerator extends Phaser.GameObjects.Image {
 
   // Parses skyLayer1 and skyLayer2 arrays and using that data draws the textures of clouds and stars in a new texture.
   generateTexture() {
+    let unitSize = this.gridUnitSize;
     let rt = this.scene.make.renderTexture(
       { x: 0, y: 0, width: this.width, height: this.height },
       false
     );
     rt.setOrigin(0, 0);
 
-    for (let i = 0, j = this.skyLayer1.length; i < j; i++) {
-      let cloudScale = Math.random() * 0.4 + 0.6;
-
-      // First layer
+    // cloudsLayer1
+    this.cloudsLayer1.forEach(function(alpha, position) {
+      let variationX = Math.random() * unitSize - unitSize / 2 - unitSize;
+      let variationY = Math.random() * unitSize - unitSize / 2 - unitSize;
+      let cloudScale = Math.random() * 0.6 + 0.4;
       this.cloudTexture
-        .setPosition(this.skyLayer1[i][0], this.skyLayer1[i][1])
+        .setPosition(position.x + variationX, position.y + variationY)
         .setTint(this.cloud1Color)
-        .setAlpha(this.skyLayer1[i][2] / 3)
+        .setAlpha(alpha * this.cloud1Opacity)
+        .setScale(cloudScale, cloudScale)
+        .setVisible(false);
+
+      rt.draw(this.cloudTexture);
+    }, this);
+
+    // cloudsLayer2
+    this.cloudsLayer2.forEach(function(alpha, position) {
+      let variationX = Math.random() * unitSize - unitSize / 2 - unitSize;
+      let variationY = Math.random() * unitSize - unitSize / 2 - unitSize;
+      let cloudScale = Math.random() * 0.6 + 0.4;
+      this.cloudTexture
+        .setPosition(position.x + variationX, position.y + variationY)
+        .setTint(this.cloud2Color)
+        .setAlpha(alpha * this.cloud2Opacity)
         .setScale(cloudScale, cloudScale)
         .setVisible(false);
 
       rt.draw(this.cloudTexture);
 
-      // Second layer
-      this.cloudTexture
-        .setPosition(this.skyLayer2[i][0], this.skyLayer2[i][1])
-        .setTint(this.cloud2Color)
-        .setAlpha(this.skyLayer2[i][2] / 3)
-        .setScale(cloudScale, cloudScale)
-        .setVisible(false);
+      if (alpha > this.starHightPassFilter * this.cloud2Opacity) {
+        let stars =
+          Math.random() * (this.maxStarsCluster - this.minStarsCluster) +
+          this.minStarsCluster;
+        for (let i = 0; i < stars; i++) {
+          let scaleVar = Phaser.Math.RND.sign() * Math.random() * 0.1;
+          let starTexture = Phaser.Math.RND.pick([
+            this.star1Texture,
+            this.star2Texture,
+            this.star3Texture
+          ]);
 
-      let starTexture = Phaser.Math.RND.pick([
-        this.star1Texture,
-        this.star2Texture,
-        this.star3Texture
-      ]);
+          let starXpos =
+            position.x +
+            variationX +
+            (Math.random() * this.gridUnitSize * 2 - this.gridUnitSize / 2) *
+              this.starsDispersion;
+          let starYpos =
+            position.y +
+            variationY +
+            (Math.random() * this.gridUnitSize * 2 - this.gridUnitSize / 2) *
+              this.starsDispersion;
 
-      starTexture
-        .setPosition(this.skyLayer2[i][0], this.skyLayer2[i][1])
-        .setAlpha(this.skyLayer2[i][2] * (this.starAlpha / this.globalOpacity))
-        .setTint(Phaser.Math.RND.pick(this.starColors));
+          starTexture
+            .setPosition(starXpos, starYpos)
+            .setAlpha(alpha + (Math.random() * 0.6 - 0.2))
+            .setTint(Phaser.Math.RND.pick(this.starColors));
 
-      rt.draw([ this.cloudTexture, starTexture ]);
-    }
+          this.cloudTexture
+            .setPosition(starXpos, starYpos)
+            .setTint(0xffffff)
+            .setAlpha(alpha / 2 * this.cloudStarOpacity)
+            .setScale(this.cloudStarScale + scaleVar, this.cloudStarScale + scaleVar)
+            .setVisible(false);
+
+          rt.draw([ this.cloudTexture, starTexture ]);
+        }
+      }
+    }, this);
+
+    rt.draw(this.cloudTexture);
 
     // Saves texture in cache
     rt.saveTexture('rt_SkyGenerator');
-  }
-
-  // Takes 3 random points and calcs the average for each iteration
-  generatePoints() {
-    for (let i = 0; i < this.generatedPointsQty; i++) {
-      let point1 = Phaser.Math.RND.pick(this.skyLayer1);
-      let point2 = Phaser.Math.RND.pick(this.skyLayer1);
-      let point3 = Phaser.Math.RND.pick(this.skyLayer1);
-
-      let x = Phaser.Math.Average([ point1[0], point2[0], point3[0] ]);
-      let y = Phaser.Math.Average([ point1[1], point2[1], point3[0] ]);
-      let opacity =
-        Phaser.Math.Average([ point1[2], point2[2], point3[0] ]) +
-        (Math.random() * 10 - 10) / 100;
-      opacity = Phaser.Math.Clamp(opacity, 0.05, this.globalOpacity);
-
-      this.skyLayer1.push([ x, y, opacity ]);
-
-      point1 = Phaser.Math.RND.pick(this.skyLayer1);
-      point2 = Phaser.Math.RND.pick(this.skyLayer1);
-      point3 = Phaser.Math.RND.pick(this.skyLayer1);
-
-      x = Phaser.Math.Average([ point1[0], point2[0], point3[0] ]);
-      y = Phaser.Math.Average([ point1[1], point2[1], point3[0] ]);
-      opacity =
-        Phaser.Math.Average([ point1[2], point2[2], point3[0] ]) +
-        (Math.random() * 10 - 10) / 100;
-      opacity = Phaser.Math.Clamp(opacity, 0.05, this.globalOpacity);
-
-      this.skyLayer2.push([ x, y, opacity ]);
-    }
   }
 }
