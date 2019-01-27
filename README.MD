@@ -2,7 +2,7 @@
 Custom image class to use with the game framework [Phaser 3](https://phaser.io/).  
 This class generates customizable star backgrounds.  
 You can see the source in **dist** folder. 
-Demo [here](https://jjcapellan.github.io/skygenerator2/).  
+Demo [here](https://jjcapellan.github.io/skygenerator/).  
 ![sample1](img21.png "sample1")  
 ![sample2](img25.png "sample2") 
 ![sample3](img26.png "sample3") 
